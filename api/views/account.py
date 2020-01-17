@@ -2,11 +2,12 @@ from rest_framework.views import APIView
 from rest_framework.response import Response
 from api import models
 import uuid
-from api.utils import LuffyAuth
+from api.utils.auth import LuffyAuth
 
 
 class AuthView(APIView):
     def post(self,request, *args, **kwargs):
+        """用户登录"""
         print(request.data)
         ret = {"code":1000}
         user = request.data.get("user")
@@ -26,6 +27,7 @@ class MicroView(APIView):
     authentication_classes = [LuffyAuth,]
 
     def get(self,request,*args,**kwargs):
+        '''微职位页面获取，需要用户先登录'''
         # 认证放入认证组件
         # token = request.GET.get("token")  # 新request.GET === 旧request.GET
         # token2 = request.query_params.get("token")   # 新request.query_params === request._request.GET

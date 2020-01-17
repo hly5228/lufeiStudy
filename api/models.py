@@ -4,14 +4,14 @@ from django.contrib.contenttypes.fields import GenericForeignKey, GenericRelatio
 
 
 class Account(models.Model):
-    user = models.CharField(null=False, max_length=32, verbose_name="用户名")
+    user = models.CharField(null=False, max_length=32, verbose_name="用户名", unique=True)
     password = models.CharField(null=False, max_length=64, verbose_name="密码")
     nickname = models.CharField(null=False, max_length=32, verbose_name="昵称")
 
 
 class UserAuthToken(models.Model):
     user = models.OneToOneField(to=Account, on_delete=models.CASCADE)
-    token = models.CharField(max_length=64)
+    token = models.CharField(max_length=64, unique=True)
 
 
 # ############使用课件直接给出数据库字段#######################
@@ -91,7 +91,7 @@ class Scholarship(models.Model):
     value = models.PositiveIntegerField(verbose_name="奖学金数额")
 
     def __str__(self):
-        return "%s:%s-%s"%(self.degree_coure, self.time_percent, self.value)
+        return "%s:%s-%s" % (self.degree_coure, self.time_percent, self.value)
 
     class Meta:
         verbose_name_plural = "05.学位课奖学金"
@@ -105,7 +105,8 @@ class Course(models.Model):
     course_type_choices = ((0, '免费'), (1, 'VIP专享'), (2, '学位课程'))
     course_type = models.SmallIntegerField(choices=course_type_choices, default=0)
 
-    degree_course = models.ForeignKey("DegreeCourse", blank=True, null=True, help_text="若是学位课程，此处关联学位表", on_delete=models.CASCADE)
+    degree_course = models.ForeignKey("DegreeCourse", blank=True, null=True, help_text="若是学位课程，此处关联学位表",
+                                      on_delete=models.CASCADE)
 
     brief = models.TextField(verbose_name="课程（模块）概述", max_length=2048, blank=True, null=True)
     level_choices = ((0, '初级'), (1, '中级'), (2, '高级'))
@@ -269,3 +270,158 @@ class PricePolicy(models.Model):
         return "%s(%s)%s" % (self.content_object, self.get_valid_period_display(), self.price)
 
 
+# ######################### 深科技相关 ########################
+class ArticleSource(models.Model):
+    """文章来源"""
+    name = models.CharField(max_length=64, unique=True)
+
+    class Meta:
+        verbose_name_plural = "16. 文章来源"
+
+    def __str__(self):
+        return self.name
+
+
+class Article(models.Model):
+    """文章资讯"""
+    title = models.CharField(max_length=255, unique=True, db_index=True, verbose_name="标题")
+    source = models.ForeignKey("ArticleSource", verbose_name="来源", on_delete=models.CASCADE)
+    article_type_choices = ((0, '资讯'), (1, '视频'))
+    article_type = models.SmallIntegerField(choices=article_type_choices, default=0)
+    brief = models.TextField(max_length=512, verbose_name="摘要")
+    head_img = models.CharField(max_length=255)
+    content = models.TextField(verbose_name="文章正文")
+    pub_date = models.DateTimeField(verbose_name="上架日期")
+    offline_date = models.DateTimeField(verbose_name="下架日期", blank=True, null=True)
+    status_choices = ((0, '在线'), (1, '下线'))
+    status = models.SmallIntegerField(choices=status_choices, default=0, verbose_name="状态")
+    order = models.SmallIntegerField(default=0, verbose_name="权重", help_text="文章想置顶，可以把数字调大，不要超过1000")
+    vid = models.CharField(max_length=128, verbose_name="视频VID", help_text="文章类型是视频, 则需要添加视频VID", blank=True, null=True)
+    comment_num = models.SmallIntegerField(default=0, verbose_name="评论数")
+    agree_num = models.SmallIntegerField(default=0, verbose_name="点赞数")
+    view_num = models.SmallIntegerField(default=0, verbose_name="观看数")
+    collect_num = models.SmallIntegerField(default=0, verbose_name="收藏数")
+
+    # tags = models.ManyToManyField("Tags", blank=True, verbose_name="标签")
+    date = models.DateTimeField(auto_now_add=True, verbose_name="创建日期")
+
+    position_choices = ((0, '信息流'), (1, 'banner大图'), (2, 'banner小图'))
+    position = models.SmallIntegerField(choices=position_choices, default=0, verbose_name="位置")
+
+    comment_list = GenericRelation("Comment")
+
+    class Meta:
+        verbose_name_plural = "17. 文章"
+
+    def __str__(self):
+        return "%s-%s" % (self.source, self.title)
+
+
+class Collection(models.Model):
+    """收藏"""
+    content_type = models.ForeignKey(ContentType, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField()
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    account = models.ForeignKey("Account", on_delete=models.CASCADE)
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        unique_together = ('content_type', 'object_id', 'account')
+        verbose_name_plural = "18. 通用收藏表"
+
+
+class Comment(models.Model):
+    """通用的评论表"""
+    content_type = models.ForeignKey(ContentType, blank=True, null=True, verbose_name="类型", on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField(blank=True, null=True)
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    p_node = models.ForeignKey("self", blank=True, null=True, verbose_name="父级评论", on_delete=models.CASCADE)
+    content = models.TextField(max_length=1024)
+    account = models.ForeignKey("Account", verbose_name="会员名", on_delete=models.CASCADE)
+    disagree_number = models.IntegerField(default=0, verbose_name="踩")
+    agree_number = models.IntegerField(default=0, verbose_name="赞同数")
+    date = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.content
+
+    class Meta:
+        verbose_name_plural = "19. 通用评论表"
+
+
+# ########################### 优惠券 ################################
+class Coupon(models.Model):
+    """优惠券生成规则"""
+    name = models.CharField(max_length=64, verbose_name="活动名称")
+    brief = models.TextField(blank=True, null=True, verbose_name="优惠券介绍")
+    coupon_type_choices = ((0, '通用券'), (1, '满减券'), (2, '折扣券'))
+    coupon_type = models.SmallIntegerField(choices=coupon_type_choices, default=0, verbose_name="券类型")
+
+    """
+    通用：
+        money_equivalent_value=100
+        off_percent=null
+        minimum_consume=0
+    满减：
+        money_equivalent_value=100
+        off_percent=null
+        minimum_consume=1000
+    折扣：
+        money_equivalent_value=0
+        off_percent=79
+        minimum_consume=0
+    """
+    money_equivalent_value = models.IntegerField(verbose_name="等值货币")
+    off_percent = models.PositiveSmallIntegerField("折扣百分比", help_text="只针对折扣券，例7.9折，写79", blank=True, null=True)
+    minimum_consume = models.PositiveIntegerField("最低消费", default=0, help_text="仅在满减券时填写此字段")
+
+    content_type = models.ForeignKey(ContentType, blank=True, null=True, on_delete=models.CASCADE)
+    object_id = models.PositiveIntegerField("绑定课程", blank=True, null=True, help_text="可以把优惠券跟课程绑定")
+    content_object = GenericForeignKey('content_type', 'object_id')
+
+    quantity = models.PositiveIntegerField("数量(张)", default=1)
+    open_date = models.DateField("优惠券领取开始时间")
+    close_date = models.DateField("优惠券领取结束时间")
+    valid_begin_date = models.DateField(verbose_name="有效期开始时间", blank=True, null=True)
+    valid_end_date = models.DateField(verbose_name="有效结束时间", blank=True, null=True)
+    coupon_valid_days = models.PositiveIntegerField(verbose_name="优惠券有效期（天）", blank=True, null=True,
+                                                    help_text="自券被领时开始算起")
+    date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        verbose_name_plural = "31. 优惠券生成记录"
+
+    def __str__(self):
+        return "%s(%s)" % (self.get_coupon_type_display(), self.name)
+
+    def save(self, *args, **kwargs):
+        if not self.coupon_valid_days or (self.valid_begin_date and self.valid_end_date):
+            if self.valid_begin_date and self.valid_end_date:
+                if self.valid_end_date <= self.valid_begin_date:
+                    raise ValueError("valid_end_date 有效期结束日期必须晚于 valid_begin_date ")
+            if self.coupon_valid_days == 0:
+                raise ValueError("coupon_valid_days 有效期不能为0")
+        if self.close_date < self.open_date:
+            raise ValueError("close_date 优惠券领取结束时间必须晚于 open_date优惠券领取开始时间 ")
+
+        super(Coupon, self).save(*args, **kwargs)
+
+
+class CouponRecord(models.Model):
+    """优惠券发放、消费纪录"""
+    coupon = models.ForeignKey("Coupon", on_delete=models.CASCADE)
+    number = models.CharField(max_length=64, unique=True)
+    account = models.ForeignKey("Account", verbose_name="拥有者", on_delete=models.CASCADE)
+    status_choices = ((0, '未使用'), (1, '已使用'), (2, '已过期'))
+    status = models.SmallIntegerField(choices=status_choices, default=0)  # 什么时候检测是否过期？
+    get_time = models.DateTimeField(verbose_name="领取时间", help_text="用户领取时间")
+    used_time = models.DateTimeField(blank=True, null=True, verbose_name="使用时间")
+    # order = models.ForeignKey("Order", blank=True, null=True, verbose_name="关联订单")  # 一个订单可以有多个优惠券
+
+    class Meta:
+        verbose_name_plural = "32. 用户优惠券"
+
+    def __str__(self):
+        return '%s-%s-%s' % (self.account, self.number, self.status)

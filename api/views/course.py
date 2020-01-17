@@ -3,9 +3,9 @@ from rest_framework.response import Response
 from rest_framework.renderers import JSONRenderer,BrowsableAPIRenderer
 from rest_framework.versioning import QueryParameterVersioning,URLPathVersioning,AcceptHeaderVersioning
 from api import models
-from rest_framework.viewsets import GenericViewSet
+from rest_framework.viewsets import GenericViewSet,ViewSetMixin
 from api.serializers.course import CourseSerializer, CourseDetailSerializer
-
+from rest_framework.pagination import PageNumberPagination
 
 # class CourseView(APIView):
 #     # 可以再settins里设置为全局的
@@ -39,7 +39,7 @@ from api.serializers.course import CourseSerializer, CourseDetailSerializer
 #         return Response(ret)
 
 
-class CourseView(GenericViewSet):
+class CourseView(GenericViewSet):  # 或者继承（ViewSetMixin, APIView）
     # 可以再settins里设置为全局的
     # renderer_classes = [JSONRenderer,]
 
@@ -61,7 +61,7 @@ class CourseView(GenericViewSet):
             ret['error'] = '获取数据失败!'
         return Response(ret)
 
-    def retrieve(self,request, *args, **kwargs):
+    def retrieve(self, request, *args, **kwargs):
         '''
         课程详细接口
         :param request:
@@ -79,3 +79,8 @@ class CourseView(GenericViewSet):
             ret['code'] = 1001
             ret['error'] = '获取数据失败!'
         return Response(ret)
+
+
+
+
+

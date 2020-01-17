@@ -17,3 +17,11 @@ admin.site.register(CourseChapter)
 admin.site.register(CourseSection)
 admin.site.register(Homework)
 admin.site.register(PricePolicy)
+
+admin.site.register(ArticleSource)
+admin.site.register(Article)
+admin.site.register(Collection)
+admin.site.register(Comment)
+
+admin.site.register(Coupon)
+admin.site.register(CouponRecord)

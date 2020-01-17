@@ -142,11 +142,35 @@ REST_FRAMEWORK = {
 
     'DEFAULT_VERSIONING_CLASS':'rest_framework.versioning.URLPathVersioning',
     # 'VERSION_PARAM': 'version',
-    'ALLOWED_VERSIONS': ['v1','v2'],
-    'DEFAULT_VERSION': 'v1'
+    'ALLOWED_VERSIONS': ['v1', 'v2'],
+    'DEFAULT_VERSION': 'v1',
+
+    'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.PageNumberPagination',
+    'PAGE_SIZE': 1,
 
 }
 
 
 # 配置相关 -- 参数大写
 # 支付宝配置。。。。
+
+# django-redis配置
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": "redis://127.0.0.1:6379",
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            "CONNECTION_POOL_KWARGS": {"max_connections": 100}
+            # "PASSWORD": "密码",
+        }
+    }
+}
+
+SHOPPING_CAR_KEY = 'shopping_car_%s_%s'
+PAY_CENTER_KEY = 'pay_center_%s'
+
+ERROR_CODE = {
+    5001: "购物车中无此课程",
+
+}

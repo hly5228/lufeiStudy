@@ -6,9 +6,16 @@ class CourseSerializer(serializers.ModelSerializer):
     level = serializers.CharField(source='get_level_display')
     course_type = serializers.CharField(source='get_course_type_display')
 
+    course_price_policy = serializers.SerializerMethodField()
+
     class Meta:
         model = models.Course
         fields = '__all__'
+
+    def get_course_price_policy(self, obj):
+        querysets = obj.price_policy.all()
+        return [{"id": price_policy.id, "valid_period": price_policy.get_valid_period_display(),
+                 "price": price_policy.price} for price_policy in querysets]
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):
@@ -18,7 +25,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
 
     # m2m
     recommends = serializers.SerializerMethodField()
-
+    # o2m
     chapters = serializers.SerializerMethodField()
 
     class Meta:

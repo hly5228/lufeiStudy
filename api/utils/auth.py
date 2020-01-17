@@ -8,6 +8,7 @@ class LuffyAuth(BaseAuthentication):
 
     def authenticate(self, request):
         # 固定方法名
+        # 假设将token放在请求头里（url里）
         token = request.query_params.get("token")  # 新request.query_params === request._request.GET
         user = models.UserAuthToken.objects.filter(token=token).first()
         if not user:
