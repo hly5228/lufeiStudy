@@ -136,7 +136,7 @@ class PaymentView(APIView):
             coupons_object = [coupon_record.coupon for coupon_record in coupon_records_object]
             global_coupon_dict = dict()
             for coupon in coupons_object:
-                if coupon.content_object:
+                if coupon.object_id:
                     course_id = coupon.content_object.id
                     if course_id in payment_dict:
                         payment_dict[course_id]["coupon"][coupon.id]={
@@ -146,16 +146,18 @@ class PaymentView(APIView):
                             "off_percent": coupon.off_percent,
                             "minimum_consume": coupon.minimum_consume,
                         }
+
                 else:
-                    global_coupon_dict[coupon.id] = {
+                    global_coupon_dict["coupon"][coupon.id] = {
                             "name": "%s(%s)" % (coupon.get_coupon_type_display(), coupon.name),
                             "coupon_type": coupon.coupon_type,
                             "money_equivalent_value": coupon.money_equivalent_value,
                             "off_percent": coupon.off_percent,
                             "minimum_consume": coupon.minimum_consume,
                     }
+            global_coupon_dict["coupon"]["default_coupon"] = 0
 
-            payment_dict.update(global_coupon_dict)
+            payment_dict["global_coupon_dict"] = global_coupon_dict
 
             ret.data = payment_dict
         except CourseNotExistInCar as e:
