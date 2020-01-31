@@ -168,7 +168,8 @@ CACHES = {
 }
 
 SHOPPING_CAR_KEY = 'shopping_car_%s_%s'
-PAY_CENTER_KEY = 'pay_center_%s'
+PAY_CENTER_KEY = 'pay_center_%s_%s'
+PAY_CENTER_GLOBAL_COUPON_KEY = 'pay_center_global_coupon_%s'
 
 ERROR_CODE = {
     5001: "购物车中无此课程",
